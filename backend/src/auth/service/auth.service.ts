@@ -10,6 +10,7 @@ import { UserService } from './user.service';
 import { LoginModel } from '../models/login.model';
 import { userEntityToModel, UserModel } from '../models/user.model';
 import { ChangePasswordDto } from '../dtos/change-password.dto';
+import { CreateUserDto } from '../dtos/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -41,6 +42,38 @@ export class AuthService {
         updated: DateTime.utc().toJSDate(),
       });
     }
+
+    const accessPayload = {
+      username: user.firstName,
+      sub: user.id,
+      phone: user.phone,
+    };
+    const refreshTokenPayload = {
+      sub: user.id,
+    };
+
+    const accessToken = this.jwtService.sign(accessPayload, {
+      expiresIn: '30m',
+    });
+    const refreshToken = this.jwtService.sign(refreshTokenPayload, {
+      expiresIn: '7d',
+    });
+    const userResponse: UserModel = userEntityToModel(user);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: userResponse,
+    };
+  }
+
+  async register(dto: CreateUserDto): Promise<LoginModel | undefined> {
+    const existingUser = await this.userService.findByPhone(dto.phone);
+    if (existingUser) {
+      throw new BadRequestException('User already exists');
+    }
+
+    const user = await this.userService.createUser(dto);
 
     const accessPayload = {
       username: user.firstName,
