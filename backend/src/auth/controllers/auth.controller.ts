@@ -88,7 +88,7 @@ export class AuthController {
   async register(@Body() dto: CreateUserDto): Promise<ISuccess<LoginModel>> {
     const response = await this.authService.register(dto);
     return {
-      message: 'Login successful',
+      message: 'Register successful',
       data: response,
     };
   }
